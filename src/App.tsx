@@ -1,14 +1,15 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useCardStore } from '@/store/cardStore';
 import { CardContainer } from '@/components/Card/CardContainer';
-import { MinimizedCard } from '@/components/Card/MinimizedCard';
+import { MinimizedStack } from '@/components/Card/MinimizedStack';
 import { registerCardComponent } from '@/lib/cardRegistry';
-import { CalendarCard } from '@/components/cards';
+import { CalendarCard, CPUChart } from '@/components/cards';
 import { useServerSync } from '@/hooks/useServerSync';
 import type { Card } from '@/types/card';
 
 // Register custom card components
 registerCardComponent('CalendarCard', CalendarCard);
+registerCardComponent('CPUChart', CPUChart);
 
 // Demo cards to showcase functionality
 function initializeDemoCards() {
@@ -112,7 +113,7 @@ function initializeDemoCards() {
 
 function App() {
   useServerSync();
-
+  const scrollRef = useRef<HTMLDivElement>(null);
   // Subscribe to the cards Map directly for proper reactivity
   const cards = useCardStore((state) => state.cards);
 
@@ -147,13 +148,15 @@ function App() {
       {/* Centered container */}
       <div className="flex-1 max-w-2xl mx-auto w-full px-6 py-4 sm:px-8 sm:py-4 flex flex-col">
         {/* Header */}
-        <header className="mb-6 flex-shrink-0 text-center pb-4 border-b border-[#e5e5ea]">
-          <h1 className="text-3xl font-semibold text-[#1d1d1f] tracking-tight">Clawdbot Canvas</h1>
-          <p className="text-lg text-[#86868b]">Persistent data display</p>
+        {/* Header */}
+        <header className="mb-4 flex-shrink-0 pb-3 border-b border-[#e5e5ea]">
+          <h1 className="text-[28px] font-bold text-[#1d1d1f] tracking-tight leading-tight">
+            Clawdbot Canvas
+          </h1>
         </header>
 
         {/* Scrollable card stack */}
-        <div className="flex-1 overflow-y-auto -mx-2 px-2 pb-4">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto -mx-2 px-2 pb-4">
           {activeCards.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-center">
               <div className="w-16 h-16 bg-[#e5e5ea] rounded-2xl flex items-center justify-center mb-4">
@@ -169,26 +172,17 @@ function App() {
               ))}
             </div>
           )}
-        </div>
 
-        {/* Minimized cards stack */}
-        {minimizedCards.length > 0 && (
-          <div className="flex-shrink-0 pt-4 border-t border-[#e5e5ea]">
-            <span className="text-xs font-medium text-[#86868b] uppercase tracking-wide mb-2 block">
-              Minimized
-            </span>
-            <div className="space-y-1.5">
-              {minimizedCards.map((card) => (
-                <MinimizedCard key={card.id} card={card} />
-              ))}
-            </div>
-          </div>
-        )}
+          {/* Minimized cards – in flow, scroll-driven stacking */}
+          {minimizedCards.length > 0 && (
+            <MinimizedStack cards={minimizedCards} scrollRef={scrollRef} />
+          )}
+        </div>
 
         {/* Footer */}
         <footer className="pt-4 text-center flex-shrink-0">
           <p className="text-xs text-[#86868b]">
-            Clawdbot Canvas • Persistent data display
+            Clawdbot Canvas
           </p>
         </footer>
       </div>

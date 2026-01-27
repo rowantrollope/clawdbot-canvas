@@ -30,9 +30,9 @@ export function LiveActivityCard({ card }: LiveActivityCardProps) {
   };
 
   const accentColor = {
-    high: '#FF3B30',
-    normal: '#007AFF',
-    low: '#86868b',
+    high: '#1d1d1f',
+    normal: '#1d1d1f',
+    low: '#1d1d1f',
   }[card.priority];
 
   // Show pulsing indicator for active progress cards

@@ -5,6 +5,8 @@ import { isProgressData, isStatusData, isMarkdownData, isListData } from '../../
 
 interface MinimizedCardProps {
   card: Card;
+  style?: React.CSSProperties;
+  className?: string;
 }
 
 function getSummary(card: Card): string {
@@ -27,7 +29,7 @@ function getSummary(card: Card): string {
   return '';
 }
 
-export function MinimizedCard({ card }: MinimizedCardProps) {
+export function MinimizedCard({ card, style, className }: MinimizedCardProps) {
   const { expand, dismiss } = useCardStore();
   const [isVisible, setIsVisible] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
@@ -50,9 +52,9 @@ export function MinimizedCard({ card }: MinimizedCardProps) {
   };
 
   const accentColor = {
-    high: '#FF3B30',
-    normal: '#007AFF',
-    low: '#86868b',
+    high: '#1d1d1f',
+    normal: '#1d1d1f',
+    low: '#1d1d1f',
   }[card.priority];
 
   const summary = getSummary(card);
@@ -60,12 +62,14 @@ export function MinimizedCard({ card }: MinimizedCardProps) {
   return (
     <button
       onClick={handleExpand}
+      style={style}
       className={`
         group w-full text-left bg-white/80 backdrop-blur-xl rounded-2xl
         shadow-[0_1px_4px_rgba(0,0,0,0.06)] overflow-hidden
         transition-all duration-200 ease-out cursor-pointer
         hover:shadow-[0_2px_8px_rgba(0,0,0,0.1)]
         ${isVisible && !isLeaving ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}
+        ${className ?? ''}
       `}
     >
       <div className="h-[2px]" style={{ backgroundColor: accentColor }} />
