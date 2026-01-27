@@ -151,7 +151,7 @@ function App() {
         {/* Header */}
         <header className="mb-4 flex-shrink-0 pb-3 border-b border-[#e5e5ea]">
           <h1 className="text-[28px] font-bold text-[#1d1d1f] tracking-tight leading-tight">
-            Clawdbot Canvas
+            Moltbot Canvas
           </h1>
         </header>
 
@@ -182,7 +182,7 @@ function App() {
         {/* Footer */}
         <footer className="pt-4 text-center flex-shrink-0">
           <p className="text-xs text-[#86868b]">
-            Clawdbot Canvas
+            Moltbot Canvas
           </p>
         </footer>
       </div>
