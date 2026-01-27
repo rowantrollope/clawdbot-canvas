@@ -23,26 +23,26 @@ function formatDate(dateStr: string): string {
 export function CalendarCard({ date, events }: CalendarCardProps) {
   return (
     <div className="space-y-3">
-      <div className="text-sm font-medium text-[#86868b]">
+      <div className="text-lg font-medium text-[#86868b]">
         {formatDate(date)}
       </div>
       {events.length === 0 ? (
-        <div className="text-sm text-[#86868b] italic py-2">
+        <div className="text-lg text-[#86868b] italic py-2">
           No events scheduled
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-0.5">
           {events.map((event) => (
-            <div key={event.id} className="flex items-center gap-3 py-2">
+            <div key={event.id} className="flex items-center gap-3 py-1">
               <div
                 className="w-1 h-8 rounded-full flex-shrink-0"
                 style={{ backgroundColor: event.color }}
               />
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-[#1d1d1f] truncate">
+                <div className="text-lg font-medium text-[#1d1d1f] truncate">
                   {event.title}
                 </div>
-                <div className="text-xs text-[#86868b]">
+                <div className="text-base text-[#86868b]">
                   {event.startTime} - {event.endTime}
                 </div>
               </div>

@@ -149,16 +149,9 @@ function App() {
       {/* Centered container */}
       <div className="flex-1 max-w-2xl mx-auto w-full px-6 py-4 sm:px-8 sm:py-4 flex flex-col">
         {/* Header */}
-        <header className="mb-6 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#007AFF] to-[#5856D6] rounded-xl flex items-center justify-center shadow-sm">
-              <span className="text-white text-lg">🤖</span>
-            </div>
-            <div>
-              <h1 className="text-xl font-semibold text-[#1d1d1f] tracking-tight">Jarvis Canvas</h1>
-              <p className="text-sm text-[#86868b]">AI-powered notification canvas</p>
-            </div>
-          </div>
+        <header className="mb-6 flex-shrink-0 text-center pb-4 border-b border-[#e5e5ea]">
+          <h1 className="text-3xl font-semibold text-[#1d1d1f] tracking-tight">Clawdbot Canvas</h1>
+          <p className="text-lg text-[#86868b]">AI-powered notification canvas</p>
         </header>
 
         {/* Scrollable card stack */}
