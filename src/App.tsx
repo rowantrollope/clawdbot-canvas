@@ -133,9 +133,12 @@ function App() {
       .sort((a, b) => b.createdAt - a.createdAt);
   }, [cards]);
 
-  // Initialize demo cards on mount
+  // Load demo cards only when ?demo is in the URL
   useEffect(() => {
-    initializeDemoCards();
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('demo')) {
+      initializeDemoCards();
+    }
   }, []);
 
   return (
