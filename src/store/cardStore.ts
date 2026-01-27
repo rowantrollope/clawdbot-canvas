@@ -5,12 +5,16 @@ interface CardStore {
   cards: Map<string, Card>;
 
   // Actions
-  upsert: (card: Omit<Card, 'createdAt'> & { createdAt?: number }) => void;
+  upsert: (card: Omit<Card, 'createdAt' | 'updatedAt'> & { createdAt?: number }) => void;
   update: (id: string, updates: Partial<Omit<Card, 'id'>>) => void;
   remove: (id: string) => void;
+  /** User-initiated dismiss - respects persistent flag */
+  dismiss: (id: string) => boolean;
   minimize: (id: string) => void;
   expand: (id: string) => void;
   clear: () => void;
+  /** Batch multiple operations */
+  batch: (operations: Array<{ action: 'upsert' | 'update' | 'remove'; card?: Omit<Card, 'createdAt' | 'updatedAt'> & { createdAt?: number }; id?: string; updates?: Partial<Omit<Card, 'id'>> }>) => void;
 
   // Selectors
   getActiveCards: () => Card[];
@@ -25,19 +29,29 @@ export const useCardStore = create<CardStore>((set, get) => ({
     set((state) => {
       const newCards = new Map(state.cards);
       const existing = newCards.get(card.id);
+      const now = Date.now();
 
       // If card exists and user manually changed state, preserve their choice
       if (existing?.userStateChange && card.state !== existing.state) {
         newCards.set(card.id, {
           ...card,
           createdAt: existing.createdAt,
+          updatedAt: now,
           state: existing.state,
           userStateChange: true,
         });
-      } else {
+      } else if (existing) {
+        // Existing card being updated
         newCards.set(card.id, {
           ...card,
-          createdAt: card.createdAt ?? Date.now(),
+          createdAt: existing.createdAt,
+          updatedAt: now,
+        });
+      } else {
+        // New card
+        newCards.set(card.id, {
+          ...card,
+          createdAt: card.createdAt ?? now,
         });
       }
 
@@ -64,6 +78,16 @@ export const useCardStore = create<CardStore>((set, get) => ({
       newCards.delete(id);
       return { cards: newCards };
     });
+  },
+
+  dismiss: (id) => {
+    const card = get().cards.get(id);
+    // Only allow dismissing non-persistent cards
+    if (card && !card.persistent) {
+      get().remove(id);
+      return true;
+    }
+    return false;
   },
 
   minimize: (id) => {
@@ -102,6 +126,23 @@ export const useCardStore = create<CardStore>((set, get) => ({
 
   clear: () => {
     set({ cards: new Map() });
+  },
+
+  batch: (operations) => {
+    const store = get();
+    for (const op of operations) {
+      switch (op.action) {
+        case 'upsert':
+          if (op.card) store.upsert(op.card);
+          break;
+        case 'update':
+          if (op.id && op.updates) store.update(op.id, op.updates);
+          break;
+        case 'remove':
+          if (op.id) store.remove(op.id);
+          break;
+      }
+    }
   },
 
   getActiveCards: () => {

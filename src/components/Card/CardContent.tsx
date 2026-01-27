@@ -5,13 +5,16 @@ import type {
   StatusData,
   MarkdownData,
   ListData,
+  CustomData,
 } from '../../types/card';
 import {
   isProgressData,
   isStatusData,
   isMarkdownData,
   isListData,
+  isCustomData,
 } from '../../types/card';
+import { getCardComponent } from '../../lib/cardRegistry';
 
 interface CardContentProps {
   type: CardType;
@@ -237,6 +240,63 @@ function ListContent({ data }: { data: ListData }) {
   );
 }
 
+// Wrapper component to render a registered custom component
+function RegisteredComponent({
+  componentName,
+  props,
+  className,
+}: {
+  componentName: string;
+  props: Record<string, unknown>;
+  className?: string;
+}) {
+  const Component = getCardComponent(componentName);
+
+  if (!Component) {
+    return (
+      <div className="text-sm text-[#86868b] italic">
+        Component not found: {componentName}
+      </div>
+    );
+  }
+
+  return (
+    <div className={className}>
+      {/* eslint-disable-next-line react-hooks/static-components */}
+      <Component {...props} />
+    </div>
+  );
+}
+
+function CustomContent({ data }: { data: CustomData }) {
+  // Render registered component
+  if (data.component) {
+    return (
+      <RegisteredComponent
+        componentName={data.component}
+        props={data.props || {}}
+        className={data.className}
+      />
+    );
+  }
+
+  // Render raw HTML (sandboxed via dangerouslySetInnerHTML)
+  if (data.html) {
+    return (
+      <div
+        className={`prose prose-sm max-w-none ${data.className || ''}`}
+        dangerouslySetInnerHTML={{ __html: data.html }}
+      />
+    );
+  }
+
+  return (
+    <div className="text-sm text-[#86868b] italic">
+      No content provided for custom card
+    </div>
+  );
+}
+
 export function CardContent({ type, data }: CardContentProps) {
   switch (type) {
     case 'progress':
@@ -257,6 +317,11 @@ export function CardContent({ type, data }: CardContentProps) {
     case 'list':
       if (isListData(data)) {
         return <ListContent data={data} />;
+      }
+      break;
+    case 'custom':
+      if (isCustomData(data)) {
+        return <CustomContent data={data} />;
       }
       break;
   }

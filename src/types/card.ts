@@ -1,6 +1,6 @@
 export type CardState = 'active' | 'minimized';
 export type CardPriority = 'high' | 'normal' | 'low';
-export type CardType = 'progress' | 'status' | 'markdown' | 'list';
+export type CardType = 'progress' | 'status' | 'markdown' | 'list' | 'custom';
 
 export interface Card {
   id: string;
@@ -9,10 +9,15 @@ export interface Card {
   icon?: string;
   state: CardState;
   priority: CardPriority;
+  /** If true, user cannot dismiss - only agent can remove */
+  persistent: boolean;
   data: CardData;
   createdAt: number;
+  updatedAt?: number;
   /** Tracks if user manually changed state - prevents auto-updates from overriding */
   userStateChange?: boolean;
+  /** Group related notifications (future) */
+  group?: string;
 }
 
 // Card-specific data types
@@ -39,7 +44,18 @@ export interface ListData {
   }>;
 }
 
-export type CardData = ProgressData | StatusData | MarkdownData | ListData;
+export interface CustomData {
+  /** Component name from the registry */
+  component?: string;
+  /** Props to pass to the component */
+  props?: Record<string, unknown>;
+  /** Raw HTML content (sandboxed) */
+  html?: string;
+  /** Additional CSS class names */
+  className?: string;
+}
+
+export type CardData = ProgressData | StatusData | MarkdownData | ListData | CustomData;
 
 // Helper type guards
 export function isProgressData(data: CardData): data is ProgressData {
@@ -56,4 +72,8 @@ export function isMarkdownData(data: CardData): data is MarkdownData {
 
 export function isListData(data: CardData): data is ListData {
   return 'items' in data && Array.isArray((data as ListData).items);
+}
+
+export function isCustomData(data: CardData): data is CustomData {
+  return 'component' in data || 'html' in data;
 }
