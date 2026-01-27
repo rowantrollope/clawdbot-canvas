@@ -1,140 +1,81 @@
+import { Card, CardContent } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
+import { Checkbox } from "@/components/ui/checkbox"
+
 function App() {
+  const tasks = [
+    { id: '1', text: 'Set up Shadcn/UI + Tailwind', done: true },
+    { id: '2', text: 'Build ProgressBar widget', done: false },
+    { id: '3', text: 'Add WebSocket for runtime updates', done: false },
+    { id: '4', text: 'Connect to Clawdbot Gateway', done: false },
+  ]
+  
+  const completedCount = tasks.filter(t => t.done).length
+
   return (
-    <div style={{ 
-      minHeight: '100vh',
-      backgroundColor: '#f5f5f7',
-      fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
-      padding: '20px'
-    }}>
+    <div className="min-h-screen bg-[#f5f5f7] font-[-apple-system,BlinkMacSystemFont,sans-serif] p-5">
       {/* Header */}
-      <header style={{
-        background: 'white',
-        padding: '16px 24px',
-        borderRadius: '16px',
-        marginBottom: '20px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '24px' }}>🤖</span>
-          <span style={{ fontWeight: 600, color: '#1d1d1f' }}>Jarvis Canvas</span>
-        </div>
-      </header>
+      <Card className="mb-5 border-0 shadow-sm">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🤖</span>
+            <span className="font-semibold text-[#1d1d1f]">Jarvis Canvas</span>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Task Progress */}
-      <section style={{ marginBottom: '20px' }}>
-        <h2 style={{ 
-          fontSize: '12px', 
-          fontWeight: 600, 
-          color: '#86868b', 
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px',
-          marginBottom: '12px'
-        }}>
+      <section className="mb-5">
+        <h2 className="text-xs font-semibold text-[#86868b] uppercase tracking-wide mb-3">
           In Progress
         </h2>
-        <div style={{
-          background: 'white',
-          padding: '20px',
-          borderRadius: '16px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.04), 0 4px 24px rgba(0,0,0,0.08)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                backgroundColor: '#007AFF',
-                animation: 'pulse 2s infinite'
-              }} />
-              <span style={{ fontWeight: 500, color: '#1d1d1f' }}>Canvas UI</span>
+        <Card className="border-0 shadow-md">
+          <CardContent className="p-5">
+            <div className="flex justify-between mb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-2 h-2 rounded-full bg-[#007AFF] animate-pulse" />
+                <span className="font-medium text-[#1d1d1f]">Canvas UI</span>
+              </div>
+              <span className="text-sm text-[#86868b]">35%</span>
             </div>
-            <span style={{ fontSize: '14px', color: '#86868b' }}>35%</span>
-          </div>
-          <div style={{
-            height: '8px',
-            backgroundColor: '#f5f5f7',
-            borderRadius: '4px',
-            overflow: 'hidden'
-          }}>
-            <div style={{
-              width: '35%',
-              height: '100%',
-              backgroundColor: '#007AFF',
-              borderRadius: '4px',
-              transition: 'width 0.5s ease'
-            }} />
-          </div>
-        </div>
+            <Progress value={35} className="h-2 bg-[#f5f5f7]" />
+          </CardContent>
+        </Card>
       </section>
 
       {/* Todo List */}
       <section>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-          <h2 style={{ 
-            fontSize: '12px', 
-            fontWeight: 600, 
-            color: '#86868b', 
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px'
-          }}>
+        <div className="flex justify-between mb-3">
+          <h2 className="text-xs font-semibold text-[#86868b] uppercase tracking-wide">
             Tasks
           </h2>
-          <span style={{ fontSize: '12px', color: '#86868b' }}>1 of 4</span>
+          <span className="text-xs text-[#86868b]">{completedCount} of {tasks.length}</span>
         </div>
-        <div style={{
-          background: 'white',
-          borderRadius: '16px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.04), 0 4px 24px rgba(0,0,0,0.08)',
-          overflow: 'hidden'
-        }}>
-          {[
-            { text: 'Set up Shadcn/UI + Tailwind', done: true },
-            { text: 'Build ProgressBar widget', done: false },
-            { text: 'Add WebSocket for runtime updates', done: false },
-            { text: 'Connect to Clawdbot Gateway', done: false },
-          ].map((item, i, arr) => (
-            <div key={i} style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '16px',
-              padding: '16px 20px',
-              borderBottom: i < arr.length - 1 ? '1px solid #f5f5f7' : 'none'
-            }}>
-              <div style={{
-                width: '20px',
-                height: '20px',
-                borderRadius: '50%',
-                border: item.done ? 'none' : '2px solid #d2d2d7',
-                backgroundColor: item.done ? '#34c759' : 'transparent',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0
-              }}>
-                {item.done && (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
-                    <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                )}
-              </div>
-              <span style={{
-                color: item.done ? '#86868b' : '#1d1d1f',
-                textDecoration: item.done ? 'line-through' : 'none'
-              }}>
-                {item.text}
-              </span>
+        <Card className="border-0 shadow-md overflow-hidden">
+          {tasks.map((task, i) => (
+            <div 
+              key={task.id}
+              className={`flex items-center gap-4 px-5 py-4 ${
+                i < tasks.length - 1 ? 'border-b border-[#f5f5f7]' : ''
+              }`}
+            >
+              <Checkbox 
+                id={task.id} 
+                checked={task.done}
+                className="data-[state=checked]:bg-[#34c759] data-[state=checked]:border-[#34c759]"
+              />
+              <label 
+                htmlFor={task.id}
+                className={`cursor-pointer ${
+                  task.done ? 'text-[#86868b] line-through' : 'text-[#1d1d1f]'
+                }`}
+              >
+                {task.text}
+              </label>
             </div>
           ))}
-        </div>
+        </Card>
       </section>
-
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-      `}</style>
     </div>
   )
 }

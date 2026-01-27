@@ -11,28 +11,28 @@ Properly integrate Tailwind CSS v4 and Shadcn/UI into the Clawdbot Canvas projec
 
 ## Tasks
 
-### Task 1: Fix Tailwind CSS v4 [HIGH PRIORITY] [ ]
+### Task 1: Fix Tailwind CSS v4 [HIGH PRIORITY] [x] DONE
 - Ensure `@tailwindcss/postcss` is installed
 - Fix `postcss.config.js` to use `@tailwindcss/postcss` 
 - Update `src/index.css` with proper Tailwind v4 imports
 - Verify Tailwind classes work
 
-### Task 2: Install Shadcn/UI [HIGH PRIORITY] [ ]
+### Task 2: Install Shadcn/UI [HIGH PRIORITY] [x] DONE
 - Follow Vite installation: https://ui.shadcn.com/docs/installation/vite
 - Use TypeScript, neutral color palette
 - Initialize with `npx shadcn@latest init`
 
-### Task 3: Add Shadcn Card Component [MEDIUM PRIORITY] [ ]
+### Task 3: Add Shadcn Card Component [MEDIUM PRIORITY] [x] DONE (+ Progress, Checkbox)
 - Install Card component: `npx shadcn@latest add card`
 - Install any other useful base components
 
-### Task 4: Refactor App.tsx [MEDIUM PRIORITY] [ ]
+### Task 4: Refactor App.tsx [MEDIUM PRIORITY] [x] DONE
 - Replace inline styles with Tailwind classes
 - Use Shadcn Card for the white card containers
 - Keep exact same visual design (Apple-esque)
 - Maintain: header, progress bar, todo list sections
 
-### Task 5: Verify Everything Works [HIGH PRIORITY] [ ]
+### Task 5: Verify Everything Works [HIGH PRIORITY] [x] DONE - build passes
 - Dev server should show updated UI
 - No build errors
 - Visual design preserved
