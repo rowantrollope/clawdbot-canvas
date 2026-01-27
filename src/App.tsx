@@ -108,55 +108,6 @@ function initializeDemoCards() {
 - Schedule demo for next week`,
     },
   });
-
-  // --- Notification cards ---
-  store.upsert({
-    id: 'notif-pr-merged',
-    type: 'notification',
-    title: 'PR #142 Merged',
-    icon: '🔀',
-    priority: 'normal',
-    state: 'active',
-    persistent: false,
-    presentation: 'notification',
-    data: {
-      body: 'Your pull request "Fix auth token refresh" has been merged into main.',
-      appName: 'GitHub',
-      timestamp: Date.now() - 5 * 60 * 1000,
-    },
-  });
-
-  store.upsert({
-    id: 'notif-deploy',
-    type: 'notification',
-    title: 'Deploy Complete',
-    icon: '🚀',
-    priority: 'normal',
-    state: 'active',
-    persistent: false,
-    presentation: 'notification',
-    data: {
-      body: 'Production deployment v2.4.1 succeeded. All health checks passing.',
-      appName: 'Vercel',
-      timestamp: Date.now() - 12 * 60 * 1000,
-    },
-  });
-
-  store.upsert({
-    id: 'notif-comment',
-    type: 'notification',
-    title: 'New Comment',
-    icon: '💬',
-    priority: 'low',
-    state: 'active',
-    persistent: false,
-    presentation: 'notification',
-    data: {
-      body: 'Sarah left a comment on your design review: "Looks great, just one small nit on the spacing."',
-      appName: 'Linear',
-      timestamp: Date.now() - 45 * 60 * 1000,
-    },
-  });
 }
 
 function App() {
@@ -167,21 +118,13 @@ function App() {
 
   const priorityOrder: Record<Card['priority'], number> = { high: 0, normal: 1, low: 2 };
 
-  // Live activity cards (default presentation)
-  const liveActivities = useMemo(() => {
+  const activeCards = useMemo(() => {
     return Array.from(cards.values())
-      .filter((c) => c.state === 'active' && c.presentation !== 'notification')
+      .filter((c) => c.state === 'active')
       .sort((a, b) => {
         const pd = priorityOrder[a.priority] - priorityOrder[b.priority];
         return pd !== 0 ? pd : b.createdAt - a.createdAt;
       });
-  }, [cards]);
-
-  // Notification cards
-  const notifications = useMemo(() => {
-    return Array.from(cards.values())
-      .filter((c) => c.state === 'active' && c.presentation === 'notification')
-      .sort((a, b) => b.createdAt - a.createdAt);
   }, [cards]);
 
   const minimizedCards = useMemo(() => {
@@ -190,15 +133,14 @@ function App() {
       .sort((a, b) => b.createdAt - a.createdAt);
   }, [cards]);
 
-  // Load demo cards only when ?demo is in the URL
+  // Load demo cards when ?demo or /demo path
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.has('demo')) {
+    const isDemoPath = window.location.pathname === '/demo' || window.location.pathname === '/demo/';
+    if (params.has('demo') || isDemoPath) {
       initializeDemoCards();
     }
   }, []);
-
-  const hasNoCards = liveActivities.length === 0 && notifications.length === 0;
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] flex flex-col">
@@ -207,52 +149,35 @@ function App() {
         {/* Header */}
         <header className="mb-6 flex-shrink-0 text-center pb-4 border-b border-[#e5e5ea]">
           <h1 className="text-3xl font-semibold text-[#1d1d1f] tracking-tight">Clawdbot Canvas</h1>
-          <p className="text-lg text-[#86868b]">AI-powered notification canvas</p>
+          <p className="text-lg text-[#86868b]">Persistent data display</p>
         </header>
 
         {/* Scrollable card stack */}
         <div className="flex-1 overflow-y-auto -mx-2 px-2 pb-4">
-          {hasNoCards ? (
+          {activeCards.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-center">
               <div className="w-16 h-16 bg-[#e5e5ea] rounded-2xl flex items-center justify-center mb-4">
                 <span className="text-2xl">📭</span>
               </div>
-              <p className="text-[#86868b] text-sm">No active notifications</p>
+              <p className="text-[#86868b] text-sm">No active cards</p>
               <p className="text-[#86868b] text-xs mt-1">Cards will appear here when your AI agent sends them</p>
             </div>
           ) : (
-            <>
-              {/* Live Activities */}
-              {liveActivities.length > 0 && (
-                <div className="space-y-3">
-                  {liveActivities.map((card) => (
-                    <CardContainer key={card.id} card={card} />
-                  ))}
-                </div>
-              )}
-
-              {/* Notifications */}
-              {notifications.length > 0 && (
-                <div className={liveActivities.length > 0 ? 'mt-6' : ''}>
-                  <span className="text-xs font-medium text-[#86868b] uppercase tracking-wide mb-2 block">
-                    Notifications
-                  </span>
-                  <div className="space-y-2">
-                    {notifications.map((card) => (
-                      <CardContainer key={card.id} card={card} />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
+            <div className="space-y-3">
+              {activeCards.map((card) => (
+                <CardContainer key={card.id} card={card} />
+              ))}
+            </div>
           )}
         </div>
 
-        {/* Minimized cards bar */}
+        {/* Minimized cards stack */}
         {minimizedCards.length > 0 && (
           <div className="flex-shrink-0 pt-4 border-t border-[#e5e5ea]">
-            <div className="flex items-center gap-2 overflow-x-auto pb-2">
-              <span className="text-xs text-[#86868b] font-medium flex-shrink-0">Minimized:</span>
+            <span className="text-xs font-medium text-[#86868b] uppercase tracking-wide mb-2 block">
+              Minimized
+            </span>
+            <div className="space-y-1.5">
               {minimizedCards.map((card) => (
                 <MinimizedCard key={card.id} card={card} />
               ))}
@@ -263,7 +188,7 @@ function App() {
         {/* Footer */}
         <footer className="pt-4 text-center flex-shrink-0">
           <p className="text-xs text-[#86868b]">
-            Clawdbot Canvas • Real-time AI notifications
+            Clawdbot Canvas • Persistent data display
           </p>
         </footer>
       </div>

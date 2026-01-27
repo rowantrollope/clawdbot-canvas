@@ -52,7 +52,6 @@ export const useCardStore = create<CardStore>((set, get) => ({
         // New card
         newCards.set(card.id, {
           ...card,
-          presentation: card.presentation ?? 'live-activity',
           createdAt: card.createdAt ?? now,
         });
       }
