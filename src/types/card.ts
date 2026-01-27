@@ -1,6 +1,7 @@
 export type CardState = 'active' | 'minimized';
 export type CardPriority = 'high' | 'normal' | 'low';
-export type CardType = 'progress' | 'status' | 'markdown' | 'list' | 'custom';
+export type CardType = 'progress' | 'status' | 'markdown' | 'list' | 'custom' | 'notification';
+export type CardPresentation = 'notification' | 'live-activity';
 
 export interface Card {
   id: string;
@@ -18,6 +19,8 @@ export interface Card {
   userStateChange?: boolean;
   /** Group related notifications (future) */
   group?: string;
+  /** Presentation mode: compact notification or rich live activity */
+  presentation?: CardPresentation;
 }
 
 // Card-specific data types
@@ -55,7 +58,13 @@ export interface CustomData {
   className?: string;
 }
 
-export type CardData = ProgressData | StatusData | MarkdownData | ListData | CustomData;
+export interface NotificationData {
+  body: string;
+  appName?: string;
+  timestamp?: number;
+}
+
+export type CardData = ProgressData | StatusData | MarkdownData | ListData | CustomData | NotificationData;
 
 // Helper type guards
 export function isProgressData(data: CardData): data is ProgressData {
@@ -76,4 +85,8 @@ export function isListData(data: CardData): data is ListData {
 
 export function isCustomData(data: CardData): data is CustomData {
   return 'component' in data || 'html' in data;
+}
+
+export function isNotificationData(data: CardData): data is NotificationData {
+  return 'body' in data && typeof (data as NotificationData).body === 'string';
 }

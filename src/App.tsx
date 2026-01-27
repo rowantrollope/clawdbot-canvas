@@ -108,6 +108,55 @@ function initializeDemoCards() {
 - Schedule demo for next week`,
     },
   });
+
+  // --- Notification cards ---
+  store.upsert({
+    id: 'notif-pr-merged',
+    type: 'notification',
+    title: 'PR #142 Merged',
+    icon: '🔀',
+    priority: 'normal',
+    state: 'active',
+    persistent: false,
+    presentation: 'notification',
+    data: {
+      body: 'Your pull request "Fix auth token refresh" has been merged into main.',
+      appName: 'GitHub',
+      timestamp: Date.now() - 5 * 60 * 1000,
+    },
+  });
+
+  store.upsert({
+    id: 'notif-deploy',
+    type: 'notification',
+    title: 'Deploy Complete',
+    icon: '🚀',
+    priority: 'normal',
+    state: 'active',
+    persistent: false,
+    presentation: 'notification',
+    data: {
+      body: 'Production deployment v2.4.1 succeeded. All health checks passing.',
+      appName: 'Vercel',
+      timestamp: Date.now() - 12 * 60 * 1000,
+    },
+  });
+
+  store.upsert({
+    id: 'notif-comment',
+    type: 'notification',
+    title: 'New Comment',
+    icon: '💬',
+    priority: 'low',
+    state: 'active',
+    persistent: false,
+    presentation: 'notification',
+    data: {
+      body: 'Sarah left a comment on your design review: "Looks great, just one small nit on the spacing."',
+      appName: 'Linear',
+      timestamp: Date.now() - 45 * 60 * 1000,
+    },
+  });
 }
 
 function App() {
@@ -116,23 +165,28 @@ function App() {
   // Subscribe to the cards Map directly for proper reactivity
   const cards = useCardStore((state) => state.cards);
 
-  // Compute active and minimized cards from the Map
-  const activeCards = useMemo(() => {
-    const cardList = Array.from(cards.values());
-    const priorityOrder: Record<Card['priority'], number> = { high: 0, normal: 1, low: 2 };
-    return cardList
-      .filter((card) => card.state === 'active')
+  const priorityOrder: Record<Card['priority'], number> = { high: 0, normal: 1, low: 2 };
+
+  // Live activity cards (default presentation)
+  const liveActivities = useMemo(() => {
+    return Array.from(cards.values())
+      .filter((c) => c.state === 'active' && c.presentation !== 'notification')
       .sort((a, b) => {
-        const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
-        if (priorityDiff !== 0) return priorityDiff;
-        return b.createdAt - a.createdAt;
+        const pd = priorityOrder[a.priority] - priorityOrder[b.priority];
+        return pd !== 0 ? pd : b.createdAt - a.createdAt;
       });
   }, [cards]);
 
+  // Notification cards
+  const notifications = useMemo(() => {
+    return Array.from(cards.values())
+      .filter((c) => c.state === 'active' && c.presentation === 'notification')
+      .sort((a, b) => b.createdAt - a.createdAt);
+  }, [cards]);
+
   const minimizedCards = useMemo(() => {
-    const cardList = Array.from(cards.values());
-    return cardList
-      .filter((card) => card.state === 'minimized')
+    return Array.from(cards.values())
+      .filter((c) => c.state === 'minimized')
       .sort((a, b) => b.createdAt - a.createdAt);
   }, [cards]);
 
@@ -143,6 +197,8 @@ function App() {
       initializeDemoCards();
     }
   }, []);
+
+  const hasNoCards = liveActivities.length === 0 && notifications.length === 0;
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] flex flex-col">
@@ -156,7 +212,7 @@ function App() {
 
         {/* Scrollable card stack */}
         <div className="flex-1 overflow-y-auto -mx-2 px-2 pb-4">
-          {activeCards.length === 0 ? (
+          {hasNoCards ? (
             <div className="flex flex-col items-center justify-center h-64 text-center">
               <div className="w-16 h-16 bg-[#e5e5ea] rounded-2xl flex items-center justify-center mb-4">
                 <span className="text-2xl">📭</span>
@@ -165,11 +221,30 @@ function App() {
               <p className="text-[#86868b] text-xs mt-1">Cards will appear here when your AI agent sends them</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {activeCards.map((card) => (
-                <CardContainer key={card.id} card={card} />
-              ))}
-            </div>
+            <>
+              {/* Live Activities */}
+              {liveActivities.length > 0 && (
+                <div className="space-y-3">
+                  {liveActivities.map((card) => (
+                    <CardContainer key={card.id} card={card} />
+                  ))}
+                </div>
+              )}
+
+              {/* Notifications */}
+              {notifications.length > 0 && (
+                <div className={liveActivities.length > 0 ? 'mt-6' : ''}>
+                  <span className="text-xs font-medium text-[#86868b] uppercase tracking-wide mb-2 block">
+                    Notifications
+                  </span>
+                  <div className="space-y-2">
+                    {notifications.map((card) => (
+                      <CardContainer key={card.id} card={card} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 
