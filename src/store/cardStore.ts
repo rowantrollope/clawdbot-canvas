@@ -13,6 +13,7 @@ interface CardStore {
   minimize: (id: string) => void;
   expand: (id: string) => void;
   clear: () => void;
+  replaceAll: (cards: Card[]) => void;
   /** Batch multiple operations */
   batch: (operations: Array<{ action: 'upsert' | 'update' | 'remove'; card?: Omit<Card, 'createdAt' | 'updatedAt'> & { createdAt?: number }; id?: string; updates?: Partial<Omit<Card, 'id'>> }>) => void;
 
@@ -126,6 +127,14 @@ export const useCardStore = create<CardStore>((set, get) => ({
 
   clear: () => {
     set({ cards: new Map() });
+  },
+
+  replaceAll: (cardList) => {
+    const newCards = new Map<string, Card>();
+    for (const card of cardList) {
+      newCards.set(card.id, card);
+    }
+    set({ cards: newCards });
   },
 
   batch: (operations) => {

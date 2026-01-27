@@ -4,6 +4,7 @@ import { CardContainer } from '@/components/Card/CardContainer';
 import { MinimizedCard } from '@/components/Card/MinimizedCard';
 import { registerCardComponent } from '@/lib/cardRegistry';
 import { CalendarCard } from '@/components/cards';
+import { useServerSync } from '@/hooks/useServerSync';
 import type { Card } from '@/types/card';
 
 // Register custom card components
@@ -110,6 +111,8 @@ function initializeDemoCards() {
 }
 
 function App() {
+  useServerSync();
+
   // Subscribe to the cards Map directly for proper reactivity
   const cards = useCardStore((state) => state.cards);
 
