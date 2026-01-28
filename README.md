@@ -95,6 +95,63 @@ curl -N http://localhost:5173/api/events
 
 Events: `upsert`, `remove`, `clear`.
 
+## Security
+
+### Enabling authentication
+
+Set the `CLAWDBOT_CANVAS_TOKEN` environment variable to require a shared secret on all API and page requests:
+
+```bash
+CLAWDBOT_CANVAS_TOKEN=mysecrettoken npm run dev
+```
+
+When the token is not set, the API is open and unauthenticated (convenient for local development). A warning is logged to the console in this case.
+
+### How it works
+
+| Client | Authentication method |
+|--------|----------------------|
+| **API / curl** | `Authorization: Bearer <token>` header |
+| **SSE (EventSource)** | `?token=<token>` query parameter |
+| **Browser** | Visit with `?token=<token>` once — a cookie is set and the URL is cleaned up automatically |
+
+The dashboard shows a small lock icon in the header indicating whether the server is running in secure or unsecure mode. Clicking the unlocked icon shows instructions for enabling auth.
+
+### API examples with auth
+
+```bash
+# Get cards
+curl -H "Authorization: Bearer mysecrettoken" http://localhost:5173/api/cards
+
+# Upsert a card
+curl -X POST http://localhost:5173/api/cards \
+  -H "Authorization: Bearer mysecrettoken" \
+  -H "Content-Type: application/json" \
+  -d '{"id":"test","type":"markdown","title":"Hello","icon":"👋","priority":"normal","state":"active","data":{"content":"world"}}'
+
+# SSE stream
+curl -N "http://localhost:5173/api/events?token=mysecrettoken"
+
+# Open dashboard in browser
+open "http://localhost:5173?token=mysecrettoken"
+```
+
+### CORS
+
+By default, when auth is enabled the server does not send an `Access-Control-Allow-Origin` header (same-origin only). To allow cross-origin requests from a specific domain:
+
+```bash
+CLAWDBOT_CORS_ORIGIN=https://example.com CLAWDBOT_CANVAS_TOKEN=xxx npm run dev
+```
+
+### Deployment models
+
+| Model | Setup |
+|-------|-------|
+| **Co-located** (agent + server on same machine, Tailscale Funnel to browser) | `CLAWDBOT_CANVAS_TOKEN=xxx npm run dev`. Agent uses bearer header on localhost. Browser loads with `?token=xxx`. |
+| **Standalone** (server on separate machine) | Same token used by both agent and browser. |
+| **Local dev** (no auth needed) | `npm run dev` without setting the env var. |
+
 ## Card Types
 
 | Type | `data` shape | Description |
