@@ -1,6 +1,17 @@
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { Card } from '../types/card';
 
+// Auth & CORS config
+const TOKEN = process.env.CLAWDBOT_CANVAS_TOKEN;
+const CORS_ORIGIN = process.env.CLAWDBOT_CORS_ORIGIN;
+const MAX_BODY = 1024 * 1024; // 1MB
+const COOKIE_NAME = 'clawdbot_canvas_auth';
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
+
+if (!TOKEN) {
+  console.warn('[clawdbot] CLAWDBOT_CANVAS_TOKEN not set — API is unauthenticated');
+}
+
 // In-memory card store (source of truth)
 const cards = new Map<string, Card>();
 
@@ -19,10 +30,69 @@ function json(res: ServerResponse, status: number, body: unknown) {
   res.end(JSON.stringify(body));
 }
 
+function html(res: ServerResponse, status: number, body: string) {
+  res.writeHead(status, { 'Content-Type': 'text/html' });
+  res.end(body);
+}
+
+function parseCookies(req: IncomingMessage): Record<string, string> {
+  const cookies: Record<string, string> = {};
+  const header = req.headers.cookie;
+  if (header) {
+    header.split(';').forEach(cookie => {
+      const [name, ...rest] = cookie.trim().split('=');
+      cookies[name] = rest.join('=');
+    });
+  }
+  return cookies;
+}
+
+function setAuthCookie(res: ServerResponse) {
+  // Set a cookie that proves the user authenticated
+  // Value is the token hash (so we can verify without exposing token)
+  const cookieValue = Buffer.from(TOKEN!).toString('base64');
+  res.setHeader('Set-Cookie', 
+    `${COOKIE_NAME}=${cookieValue}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${COOKIE_MAX_AGE}`
+  );
+}
+
+function verifyAuth(req: IncomingMessage, url: URL): boolean {
+  if (!TOKEN) return true; // No token configured = no auth required
+  
+  // Check Authorization header (for API calls)
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith('Bearer ') && authHeader.slice(7) === TOKEN) {
+    return true;
+  }
+  
+  // Check URL query param (for initial page load)
+  if (url.searchParams.get('token') === TOKEN) {
+    return true;
+  }
+  
+  // Check cookie (for subsequent requests)
+  const cookies = parseCookies(req);
+  const cookieValue = cookies[COOKIE_NAME];
+  if (cookieValue && Buffer.from(TOKEN).toString('base64') === cookieValue) {
+    return true;
+  }
+  
+  return false;
+}
+
 function readBody(req: IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
-    req.on('data', (c) => chunks.push(c));
+    let size = 0;
+    req.on('data', (c) => {
+      size += c.length;
+      if (size > MAX_BODY) {
+        req.destroy();
+        reject(new Error('Body too large'));
+        return;
+      }
+      chunks.push(c);
+    });
     req.on('end', () => resolve(Buffer.concat(chunks).toString()));
     req.on('error', reject);
   });
@@ -33,16 +103,58 @@ export function apiMiddleware(req: IncomingMessage, res: ServerResponse, next: (
   const path = url.pathname;
   const method = req.method!;
 
-  // CORS headers for local dev
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // CORS headers
+  if (CORS_ORIGIN) {
+    res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN);
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (method === 'OPTIONS') {
     res.writeHead(204);
     res.end();
     return;
   }
+
+  // Auth check for ALL routes when TOKEN is configured
+  if (TOKEN) {
+    const isAuthed = verifyAuth(req, url);
+    
+    if (!isAuthed) {
+      // For API routes, return JSON error
+      if (path.startsWith('/api/')) {
+        json(res, 401, { error: 'Unauthorized' });
+        return;
+      }
+      // For page routes, return HTML error with hint
+      html(res, 401, `
+        <!DOCTYPE html>
+        <html>
+        <head><title>Unauthorized</title></head>
+        <body style="font-family: -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f5f5f7;">
+          <div style="text-align: center;">
+            <h1 style="font-size: 48px; margin: 0;">🔒</h1>
+            <p style="color: #86868b; margin-top: 16px;">Access denied. Add <code>?token=xxx</code> to URL.</p>
+          </div>
+        </body>
+        </html>
+      `);
+      return;
+    }
+    
+    // If authenticated via URL token, set cookie for future requests
+    if (url.searchParams.get('token') === TOKEN) {
+      setAuthCookie(res);
+      // Redirect to clean URL (remove token from URL)
+      if (!path.startsWith('/api/')) {
+        res.writeHead(302, { 'Location': path || '/' });
+        res.end();
+        return;
+      }
+    }
+  }
+
+  // --- API Routes (only reached if authenticated) ---
 
   // SSE endpoint
   if (path === '/api/events' && method === 'GET') {
@@ -51,7 +163,7 @@ export function apiMiddleware(req: IncomingMessage, res: ServerResponse, next: (
       'Cache-Control': 'no-cache',
       Connection: 'keep-alive',
     });
-    res.write(':\n\n'); // comment to flush
+    res.write(':\n\n');
     sseClients.add(res);
     req.on('close', () => sseClients.delete(res));
     return;
@@ -80,7 +192,7 @@ export function apiMiddleware(req: IncomingMessage, res: ServerResponse, next: (
     return;
   }
 
-  // PATCH /api/cards/:id — partial update
+  // PATCH /api/cards/:id
   const patchMatch = path.match(/^\/api\/cards\/(.+)$/);
   if (patchMatch && method === 'PATCH') {
     const id = decodeURIComponent(patchMatch[1]);
@@ -96,7 +208,7 @@ export function apiMiddleware(req: IncomingMessage, res: ServerResponse, next: (
     return;
   }
 
-  // DELETE /api/cards — clear all
+  // DELETE /api/cards
   if (path === '/api/cards' && method === 'DELETE') {
     cards.clear();
     broadcast('clear', {});
@@ -104,7 +216,7 @@ export function apiMiddleware(req: IncomingMessage, res: ServerResponse, next: (
     return;
   }
 
-  // DELETE /api/cards/:id — remove one
+  // DELETE /api/cards/:id
   const deleteMatch = path.match(/^\/api\/cards\/(.+)$/);
   if (deleteMatch && method === 'DELETE') {
     const id = decodeURIComponent(deleteMatch[1]);
@@ -117,7 +229,7 @@ export function apiMiddleware(req: IncomingMessage, res: ServerResponse, next: (
   // POST /api/batch
   if (path === '/api/batch' && method === 'POST') {
     readBody(req).then((body) => {
-      const ops = JSON.parse(body) as Array<{ action: string; card?: Card; id?: string; updates?: Partial<Card> }>;
+      const ops = JSON.parse(body) as Array<{ action: string; card?: Card; id?: string }>;
       const now = Date.now();
       for (const op of ops) {
         switch (op.action) {

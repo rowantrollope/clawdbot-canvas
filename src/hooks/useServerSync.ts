@@ -2,8 +2,20 @@ import { useEffect } from 'react';
 import { useCardStore } from '@/store/cardStore';
 import type { Card } from '@/types/card';
 
+declare global {
+  interface Window {
+    __CLAWDBOT_CANVAS_TOKEN?: string;
+  }
+}
+
+function getToken(): string | undefined {
+  return window.__CLAWDBOT_CANVAS_TOKEN;
+}
+
 function connectSSE(): EventSource {
-  const es = new EventSource('/api/events');
+  const token = getToken();
+  const url = token ? `/api/events?token=${encodeURIComponent(token)}` : '/api/events';
+  const es = new EventSource(url);
 
   es.addEventListener('upsert', (e) => {
     const { card } = JSON.parse(e.data);
@@ -28,7 +40,10 @@ export function useServerSync() {
     let es: EventSource | null = null;
 
     // Initial load
-    fetch('/api/cards')
+    const token = getToken();
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    fetch('/api/cards', { headers })
       .then((r) => r.json())
       .then((cards: Card[]) => {
         if (!disposed) useCardStore.getState().replaceAll(cards);
