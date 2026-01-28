@@ -18,13 +18,23 @@ function formatDate(ts: number): string {
 }
 
 export function ArchivedCard({ card, onRestore }: ArchivedCardProps) {
+  const hasUpdates = card.updatedAt && card.archivedAt && card.updatedAt > card.archivedAt;
+
   return (
     <div className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-black/[0.03] transition-colors duration-150 group">
       {card.icon && <span className="text-sm flex-shrink-0">{card.icon}</span>}
       <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-medium text-[#1d1d1f] truncate">{card.title}</p>
+        <div className="flex items-center gap-2">
+          <p className="text-[13px] font-medium text-[#1d1d1f] truncate">{card.title}</p>
+          {hasUpdates && (
+            <span className="flex-shrink-0 w-2 h-2 bg-[#007AFF] rounded-full" title="Updated since archived" />
+          )}
+        </div>
         {card.archivedAt && (
-          <p className="text-[11px] text-[#86868b]">{formatDate(card.archivedAt)}</p>
+          <p className="text-[11px] text-[#86868b]">
+            {formatDate(card.archivedAt)}
+            {hasUpdates && <span className="text-[#007AFF]"> · updated</span>}
+          </p>
         )}
       </div>
       <button

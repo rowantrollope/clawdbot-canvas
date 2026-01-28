@@ -13,6 +13,8 @@ export function ArchiveDrawer({ cards, onRestore, onClearArchive }: ArchiveDrawe
 
   if (cards.length === 0) return null;
 
+  const updatedCount = cards.filter(c => c.updatedAt && c.archivedAt && c.updatedAt > c.archivedAt).length;
+
   return (
     <div className="mt-4">
       <div className="flex items-center justify-between">
@@ -28,6 +30,11 @@ export function ArchiveDrawer({ cards, onRestore, onClearArchive }: ArchiveDrawe
             <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z" />
           </svg>
           Archive ({cards.length})
+          {updatedCount > 0 && (
+            <span className="ml-1 px-1.5 py-0.5 text-[10px] font-medium bg-[#007AFF] text-white rounded-full">
+              {updatedCount} updated
+            </span>
+          )}
         </button>
         {open && onClearArchive && (
           <button

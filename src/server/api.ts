@@ -309,11 +309,24 @@ export function apiMiddleware(req: IncomingMessage, res: ServerResponse, next: (
       const card = JSON.parse(body) as Card;
       const now = Date.now();
       const existing = cards.get(card.id);
-      cards.set(card.id, {
-        ...card,
-        createdAt: existing?.createdAt ?? card.createdAt ?? now,
-        updatedAt: now,
-      });
+
+      // If user dismissed this card, preserve archived state but allow data updates
+      if (existing?.userDismissed && existing.state === 'archived') {
+        cards.set(card.id, {
+          ...card,
+          createdAt: existing.createdAt,
+          updatedAt: now,
+          state: 'archived',
+          archivedAt: existing.archivedAt,
+          userDismissed: true,
+        });
+      } else {
+        cards.set(card.id, {
+          ...card,
+          createdAt: existing?.createdAt ?? card.createdAt ?? now,
+          updatedAt: now,
+        });
+      }
       broadcast('upsert', { card: cards.get(card.id) });
       persist();
       json(res, 200, { ok: true, card: cards.get(card.id) });
@@ -327,7 +340,7 @@ export function apiMiddleware(req: IncomingMessage, res: ServerResponse, next: (
     const id = decodeURIComponent(archiveMatch[1]);
     const existing = cards.get(id);
     if (!existing) { json(res, 404, { error: 'Not found' }); return; }
-    const updated = { ...existing, state: 'archived' as const, archivedAt: Date.now(), updatedAt: Date.now() };
+    const updated = { ...existing, state: 'archived' as const, archivedAt: Date.now(), updatedAt: Date.now(), userDismissed: true };
     cards.set(id, updated);
     broadcast('archive', { card: updated });
     persist();
@@ -353,7 +366,7 @@ export function apiMiddleware(req: IncomingMessage, res: ServerResponse, next: (
     const id = decodeURIComponent(restoreMatch[1]);
     const existing = cards.get(id);
     if (!existing) { json(res, 404, { error: 'Not found' }); return; }
-    const updated = { ...existing, state: 'active' as const, archivedAt: undefined, updatedAt: Date.now() };
+    const updated = { ...existing, state: 'active' as const, archivedAt: undefined, userDismissed: undefined, updatedAt: Date.now() };
     cards.set(id, updated);
     broadcast('restore', { card: updated });
     persist();
@@ -408,11 +421,23 @@ export function apiMiddleware(req: IncomingMessage, res: ServerResponse, next: (
           case 'upsert':
             if (op.card) {
               const existing = cards.get(op.card.id);
-              cards.set(op.card.id, {
-                ...op.card,
-                createdAt: existing?.createdAt ?? op.card.createdAt ?? now,
-                updatedAt: now,
-              });
+              // If user dismissed this card, preserve archived state but allow data updates
+              if (existing?.userDismissed && existing.state === 'archived') {
+                cards.set(op.card.id, {
+                  ...op.card,
+                  createdAt: existing.createdAt,
+                  updatedAt: now,
+                  state: 'archived',
+                  archivedAt: existing.archivedAt,
+                  userDismissed: true,
+                });
+              } else {
+                cards.set(op.card.id, {
+                  ...op.card,
+                  createdAt: existing?.createdAt ?? op.card.createdAt ?? now,
+                  updatedAt: now,
+                });
+              }
               broadcast('upsert', { card: cards.get(op.card.id) });
             }
             break;

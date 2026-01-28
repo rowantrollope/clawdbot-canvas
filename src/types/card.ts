@@ -18,6 +18,8 @@ export interface Card {
   userStateChange?: boolean;
   /** Timestamp when archived (undefined = not archived) */
   archivedAt?: number;
+  /** True if user explicitly dismissed this card (vs agent archiving it) */
+  userDismissed?: boolean;
   /** Group related cards */
   group?: string;
 }

@@ -35,8 +35,18 @@ export const useCardStore = create<CardStore>((set, get) => ({
       const existing = newCards.get(card.id);
       const now = Date.now();
 
-      // If card exists and user manually changed state, preserve their choice
-      if (existing?.userStateChange && card.state !== existing.state) {
+      // If user dismissed this card, preserve archived state but allow data updates
+      if (existing?.userDismissed && existing.state === 'archived') {
+        newCards.set(card.id, {
+          ...card,
+          createdAt: existing.createdAt,
+          updatedAt: now,
+          state: 'archived',
+          archivedAt: existing.archivedAt,
+          userDismissed: true,
+        });
+      } else if (existing?.userStateChange && card.state !== existing.state) {
+        // If card exists and user manually changed state, preserve their choice
         newCards.set(card.id, {
           ...card,
           createdAt: existing.createdAt,
@@ -130,7 +140,7 @@ export const useCardStore = create<CardStore>((set, get) => ({
       const newCards = new Map(state.cards);
       const card = newCards.get(id);
       if (card) {
-        newCards.set(id, { ...card, state: 'archived' as CardState, archivedAt: Date.now() });
+        newCards.set(id, { ...card, state: 'archived' as CardState, archivedAt: Date.now(), userDismissed: true });
       }
       return { cards: newCards };
     });
@@ -141,7 +151,7 @@ export const useCardStore = create<CardStore>((set, get) => ({
       const newCards = new Map(state.cards);
       const card = newCards.get(id);
       if (card) {
-        newCards.set(id, { ...card, state: 'active' as CardState, archivedAt: undefined });
+        newCards.set(id, { ...card, state: 'active' as CardState, archivedAt: undefined, userDismissed: undefined });
       }
       return { cards: newCards };
     });
