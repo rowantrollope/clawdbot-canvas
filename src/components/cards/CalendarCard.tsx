@@ -20,6 +20,21 @@ function formatDate(dateStr: string): string {
   });
 }
 
+function formatTime(timeStr: string): string {
+  const date = new Date(timeStr);
+  if (isNaN(date.getTime())) return timeStr; // Return as-is if not a valid date
+  return date.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
+
+function isEventPast(endTime: string): boolean {
+  const endDate = new Date(endTime);
+  return !isNaN(endDate.getTime()) && endDate < new Date();
+}
+
 export function CalendarCard({ date, events }: CalendarCardProps) {
   return (
     <div className="space-y-3">
@@ -32,22 +47,25 @@ export function CalendarCard({ date, events }: CalendarCardProps) {
         </div>
       ) : (
         <div className="space-y-0.5">
-          {events.map((event) => (
-            <div key={event.id} className="flex items-center gap-3 py-1">
-              <div
-                className="w-1 h-8 rounded-full flex-shrink-0"
-                style={{ backgroundColor: event.color }}
-              />
-              <div className="min-w-0 flex-1">
-                <div className="text-lg font-medium text-[#1d1d1f] truncate">
-                  {event.title}
-                </div>
-                <div className="text-base text-[#86868b]">
-                  {event.startTime} - {event.endTime}
+          {events.map((event) => {
+            const isPast = isEventPast(event.endTime);
+            return (
+              <div key={event.id} className="flex items-center gap-3 py-1">
+                <div
+                  className="w-1 h-8 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: isPast ? '#d1d1d6' : event.color }}
+                />
+                <div className="min-w-0 flex-1">
+                  <div className={`text-lg font-medium truncate ${isPast ? 'text-[#c7c7cc]' : 'text-[#1d1d1f]'}`}>
+                    {event.title}
+                  </div>
+                  <div className={`text-base ${isPast ? 'text-[#d1d1d6]' : 'text-[#86868b]'}`}>
+                    {formatTime(event.startTime)} - {formatTime(event.endTime)}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
