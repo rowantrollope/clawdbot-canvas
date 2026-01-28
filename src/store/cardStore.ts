@@ -8,8 +8,8 @@ interface CardStore {
   upsert: (card: Omit<Card, 'createdAt' | 'updatedAt'> & { createdAt?: number }) => void;
   update: (id: string, updates: Partial<Omit<Card, 'id'>>) => void;
   remove: (id: string) => void;
-  /** User-initiated dismiss - archives non-persistent cards */
-  dismiss: (id: string) => boolean;
+  /** User-initiated dismiss - archives the card */
+  dismiss: (id: string) => void;
   minimize: (id: string) => void;
   expand: (id: string) => void;
   archive: (id: string) => void;
@@ -86,12 +86,9 @@ export const useCardStore = create<CardStore>((set, get) => ({
 
   dismiss: (id) => {
     const card = get().cards.get(id);
-    // Only allow dismissing non-persistent cards — archives instead of removing
-    if (card && !card.persistent) {
+    if (card) {
       get().archive(id);
-      return true;
     }
-    return false;
   },
 
   minimize: (id) => {

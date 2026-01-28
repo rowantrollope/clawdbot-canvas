@@ -174,6 +174,121 @@ export function apiMiddleware(req: IncomingMessage, res: ServerResponse, next: (
     return;
   }
 
+  // GET/POST /api/demo or /demo or ?demo — load demo cards
+  const wantsDemo = path === '/api/demo' || path === '/demo' || url.searchParams.has('demo');
+  if (wantsDemo && (method === 'GET' || method === 'POST')) {
+    const now = Date.now();
+    const demoCards: Card[] = [
+      {
+        id: 'demo-welcome',
+        type: 'markdown',
+        title: 'Welcome to Clawdbot Canvas',
+        icon: '👋',
+        priority: 'high',
+        state: 'active',
+        persistent: false,
+        createdAt: now,
+        updatedAt: now,
+        data: {
+          content: `This is your **agent-curated dashboard**.\n\n- Cards are pushed via REST API\n- Dismiss any card (it goes to archive)\n- Restore cards from the archive drawer below\n\n*These are demo cards — feel free to dismiss them!*`
+        }
+      },
+      {
+        id: 'demo-progress',
+        type: 'progress',
+        title: 'Deployment Progress',
+        icon: '🚀',
+        priority: 'normal',
+        state: 'active',
+        persistent: false,
+        createdAt: now,
+        updatedAt: now,
+        data: {
+          label: 'Deploying to production...',
+          progress: 67,
+          status: 'active'
+        }
+      },
+      {
+        id: 'demo-status',
+        type: 'status',
+        title: 'System Status',
+        icon: '📊',
+        priority: 'normal',
+        state: 'active',
+        persistent: false,
+        createdAt: now,
+        updatedAt: now,
+        data: {
+          entries: [
+            { key: 'API', value: '✓ Healthy' },
+            { key: 'Database', value: '✓ Connected' },
+            { key: 'Cache', value: '✓ 98% hit rate' },
+            { key: 'Queue', value: '12 pending' }
+          ]
+        }
+      },
+      {
+        id: 'demo-tasks',
+        type: 'list',
+        title: 'Today\'s Tasks',
+        icon: '✅',
+        priority: 'normal',
+        state: 'active',
+        persistent: false,
+        createdAt: now,
+        updatedAt: now,
+        data: {
+          items: [
+            { id: '1', text: 'Review pull requests', done: true },
+            { id: '2', text: 'Update documentation', done: true },
+            { id: '3', text: 'Deploy new feature', done: false },
+            { id: '4', text: 'Team standup at 2pm', done: false }
+          ]
+        }
+      },
+      {
+        id: 'demo-clock',
+        type: 'custom',
+        title: 'World Clock',
+        icon: '🕐',
+        priority: 'low',
+        state: 'active',
+        persistent: false,
+        createdAt: now,
+        updatedAt: now,
+        data: {
+          component: 'WorldClock',
+          props: {
+            cities: [
+              { name: 'San Francisco', timezone: 'America/Los_Angeles', emoji: '🇺🇸' },
+              { name: 'New York', timezone: 'America/New_York', emoji: '🗽' },
+              { name: 'London', timezone: 'Europe/London', emoji: '🇬🇧' },
+              { name: 'Tokyo', timezone: 'Asia/Tokyo', emoji: '🇯🇵' }
+            ]
+          }
+        }
+      }
+    ];
+
+    // Add demo cards
+    for (const card of demoCards) {
+      cards.set(card.id, card);
+      broadcast('upsert', { card });
+    }
+    persist();
+    
+    // For browser navigation (/demo or ?demo), redirect to dashboard
+    if (path === '/demo' || (url.searchParams.has('demo') && !path.startsWith('/api/'))) {
+      res.writeHead(302, { 'Location': '/' });
+      res.end();
+      return;
+    }
+    // For API calls, return JSON
+    json(res, 200, { ok: true, count: demoCards.length });
+    return;
+  }
+
   // GET /api/cards
   if (path === '/api/cards' && method === 'GET') {
     const include = url.searchParams.get('include');
@@ -217,6 +332,18 @@ export function apiMiddleware(req: IncomingMessage, res: ServerResponse, next: (
     broadcast('archive', { card: updated });
     persist();
     json(res, 200, { ok: true, card: updated });
+    return;
+  }
+
+  // DELETE /api/archive — clear all archived cards
+  if (path === '/api/archive' && method === 'DELETE') {
+    const archived = Array.from(cards.values()).filter(c => c.state === 'archived');
+    for (const card of archived) {
+      cards.delete(card.id);
+      broadcast('remove', { id: card.id });
+    }
+    persist();
+    json(res, 200, { ok: true, count: archived.length });
     return;
   }
 

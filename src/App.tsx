@@ -51,6 +51,14 @@ function App() {
       .catch(() => {});
   }, []);
 
+  const handleClearArchive = useCallback(() => {
+    const token = window.__CLAWDBOT_CANVAS_TOKEN;
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    fetch('/api/archive', { method: 'DELETE', headers })
+      .catch(() => {});
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#f5f5f7] flex flex-col">
       <div className="flex-1 max-w-2xl mx-auto w-full px-6 py-4 sm:px-8 sm:py-4 flex flex-col">
@@ -93,7 +101,7 @@ function App() {
           )}
 
           {/* Archive drawer */}
-          <ArchiveDrawer cards={archivedCards} onRestore={handleRestore} />
+          <ArchiveDrawer cards={archivedCards} onRestore={handleRestore} onClearArchive={handleClearArchive} />
         </div>
 
         {/* Footer */}

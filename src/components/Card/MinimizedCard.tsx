@@ -46,7 +46,6 @@ export function MinimizedCard({ card, style, className }: MinimizedCardProps) {
 
   const handleDismiss = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (card.persistent) return;
     setIsLeaving(true);
     setTimeout(() => {
       dismiss(card.id);
@@ -87,17 +86,15 @@ export function MinimizedCard({ card, style, className }: MinimizedCardProps) {
             <p className="text-[12px] text-[#86868b] truncate">{summary}</p>
           )}
         </div>
-        {!card.persistent && (
-          <span
-            onClick={handleDismiss}
-            className="w-5 h-5 flex items-center justify-center rounded-full text-[#86868b] opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-500 transition-all duration-150 flex-shrink-0"
-            aria-label="Dismiss card"
-          >
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </span>
-        )}
+        <span
+          onClick={handleDismiss}
+          className="w-5 h-5 flex items-center justify-center rounded-full text-[#86868b] opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-500 transition-all duration-150 flex-shrink-0"
+          aria-label="Archive card"
+        >
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </span>
       </div>
     </button>
   );
