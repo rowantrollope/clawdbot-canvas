@@ -5,7 +5,6 @@ import { MinimizedStack } from '@/components/Card/MinimizedStack';
 import { registerCardComponent } from '@/lib/cardRegistry';
 import { CalendarCard, CPUChart, WorldClock } from '@/components/cards';
 import { useServerSync } from '@/hooks/useServerSync';
-import { SecurityBadge } from '@/components/SecurityBadge';
 import { ArchiveDrawer } from '@/components/Archive/ArchiveDrawer';
 import type { Card } from '@/types/card';
 
@@ -69,10 +68,6 @@ function App() {
               <h1 className="text-[28px] font-bold text-[#1d1d1f] tracking-tight leading-tight">
                 Clawdbot Canvas
               </h1>
-              <p className="text-xs text-[#86868b] mt-1 flex items-center gap-1.5">
-                <SecurityBadge />
-                Real-time updates via SSE
-              </p>
             </div>
           </div>
         </header>

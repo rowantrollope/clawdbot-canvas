@@ -191,12 +191,34 @@ Connect to `/api/events` to receive real-time updates:
 
 ## Security
 
+### Generating a Token
+
+Generate a secure random token using one of these methods:
+
+```bash
+# Using openssl (recommended)
+openssl rand -base64 32
+
+# Using uuidgen
+uuidgen
+
+# Using /dev/urandom
+head -c 32 /dev/urandom | base64
+```
+
 ### Enabling Authentication
 
 Set `CLAWDBOT_CANVAS_TOKEN` to require auth:
 
 ```bash
-CLAWDBOT_CANVAS_TOKEN=mysecrettoken npm run dev
+export CLAWDBOT_CANVAS_TOKEN=$(openssl rand -base64 32)
+npm run dev
+```
+
+Or with an inline token:
+
+```bash
+CLAWDBOT_CANVAS_TOKEN=your-generated-token-here npm run dev
 ```
 
 | Client | Auth Method |
