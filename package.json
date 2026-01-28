@@ -1,7 +1,13 @@
 {
   "name": "clawdbot-canvas",
-  "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "A real-time widget dashboard controlled programmatically by AI agents via REST API",
+  "author": "Rowan Trollope",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rowantrollope/clawdbot-canvas.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
