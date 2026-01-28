@@ -1,4 +1,4 @@
-export type CardState = 'active' | 'minimized';
+export type CardState = 'active' | 'minimized' | 'archived';
 export type CardPriority = 'high' | 'normal' | 'low';
 export type CardType = 'progress' | 'status' | 'markdown' | 'list' | 'custom';
 
@@ -16,6 +16,8 @@ export interface Card {
   updatedAt?: number;
   /** Tracks if user manually changed state - prevents auto-updates from overriding */
   userStateChange?: boolean;
+  /** Timestamp when archived (undefined = not archived) */
+  archivedAt?: number;
   /** Group related cards */
   group?: string;
 }

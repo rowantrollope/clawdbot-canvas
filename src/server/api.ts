@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { Card } from '../types/card';
+import { loadCards, scheduleSave } from './persistence';
 
 // Auth & CORS config
 const TOKEN = process.env.CLAWDBOT_CANVAS_TOKEN;
@@ -12,8 +13,12 @@ if (!TOKEN) {
   console.warn('[clawdbot] CLAWDBOT_CANVAS_TOKEN not set — API is unauthenticated');
 }
 
-// In-memory card store (source of truth)
-const cards = new Map<string, Card>();
+// Card store (loaded from disk, persisted on mutation)
+const cards = loadCards();
+
+function persist() {
+  scheduleSave(cards);
+}
 
 // SSE clients
 const sseClients = new Set<ServerResponse>();
@@ -171,7 +176,15 @@ export function apiMiddleware(req: IncomingMessage, res: ServerResponse, next: (
 
   // GET /api/cards
   if (path === '/api/cards' && method === 'GET') {
-    json(res, 200, Array.from(cards.values()));
+    const include = url.searchParams.get('include');
+    const stateFilter = url.searchParams.get('state');
+    let result = Array.from(cards.values());
+    if (stateFilter === 'archived') {
+      result = result.filter(c => c.state === 'archived');
+    } else if (include !== 'archived') {
+      result = result.filter(c => c.state !== 'archived');
+    }
+    json(res, 200, result);
     return;
   }
 
@@ -187,8 +200,37 @@ export function apiMiddleware(req: IncomingMessage, res: ServerResponse, next: (
         updatedAt: now,
       });
       broadcast('upsert', { card: cards.get(card.id) });
+      persist();
       json(res, 200, { ok: true, card: cards.get(card.id) });
     }).catch(() => json(res, 400, { error: 'Invalid JSON' }));
+    return;
+  }
+
+  // POST /api/cards/:id/archive
+  const archiveMatch = path.match(/^\/api\/cards\/(.+)\/archive$/);
+  if (archiveMatch && method === 'POST') {
+    const id = decodeURIComponent(archiveMatch[1]);
+    const existing = cards.get(id);
+    if (!existing) { json(res, 404, { error: 'Not found' }); return; }
+    const updated = { ...existing, state: 'archived' as const, archivedAt: Date.now(), updatedAt: Date.now() };
+    cards.set(id, updated);
+    broadcast('archive', { card: updated });
+    persist();
+    json(res, 200, { ok: true, card: updated });
+    return;
+  }
+
+  // POST /api/cards/:id/restore
+  const restoreMatch = path.match(/^\/api\/cards\/(.+)\/restore$/);
+  if (restoreMatch && method === 'POST') {
+    const id = decodeURIComponent(restoreMatch[1]);
+    const existing = cards.get(id);
+    if (!existing) { json(res, 404, { error: 'Not found' }); return; }
+    const updated = { ...existing, state: 'active' as const, archivedAt: undefined, updatedAt: Date.now() };
+    cards.set(id, updated);
+    broadcast('restore', { card: updated });
+    persist();
+    json(res, 200, { ok: true, card: updated });
     return;
   }
 
@@ -203,6 +245,7 @@ export function apiMiddleware(req: IncomingMessage, res: ServerResponse, next: (
       const updated = { ...existing, ...updates, id, updatedAt: Date.now() };
       cards.set(id, updated);
       broadcast('upsert', { card: updated });
+      persist();
       json(res, 200, { ok: true, card: updated });
     }).catch(() => json(res, 400, { error: 'Invalid JSON' }));
     return;
@@ -212,6 +255,7 @@ export function apiMiddleware(req: IncomingMessage, res: ServerResponse, next: (
   if (path === '/api/cards' && method === 'DELETE') {
     cards.clear();
     broadcast('clear', {});
+    persist();
     json(res, 200, { ok: true });
     return;
   }
@@ -222,6 +266,7 @@ export function apiMiddleware(req: IncomingMessage, res: ServerResponse, next: (
     const id = decodeURIComponent(deleteMatch[1]);
     cards.delete(id);
     broadcast('remove', { id });
+    persist();
     json(res, 200, { ok: true });
     return;
   }
@@ -256,6 +301,7 @@ export function apiMiddleware(req: IncomingMessage, res: ServerResponse, next: (
             break;
         }
       }
+      persist();
       json(res, 200, { ok: true });
     }).catch(() => json(res, 400, { error: 'Invalid JSON' }));
     return;

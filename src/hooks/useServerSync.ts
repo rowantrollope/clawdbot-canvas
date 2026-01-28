@@ -31,6 +31,16 @@ function connectSSE(): EventSource {
     useCardStore.getState().clear();
   });
 
+  es.addEventListener('archive', (e) => {
+    const { card } = JSON.parse(e.data);
+    useCardStore.getState().upsert(card);
+  });
+
+  es.addEventListener('restore', (e) => {
+    const { card } = JSON.parse(e.data);
+    useCardStore.getState().upsert(card);
+  });
+
   return es;
 }
 
@@ -43,7 +53,7 @@ export function useServerSync() {
     const token = getToken();
     const headers: Record<string, string> = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
-    fetch('/api/cards', { headers })
+    fetch('/api/cards?include=archived', { headers })
       .then((r) => r.json())
       .then((cards: Card[]) => {
         if (!disposed) useCardStore.getState().replaceAll(cards);

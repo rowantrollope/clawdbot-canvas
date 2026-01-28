@@ -8,10 +8,12 @@ interface CardStore {
   upsert: (card: Omit<Card, 'createdAt' | 'updatedAt'> & { createdAt?: number }) => void;
   update: (id: string, updates: Partial<Omit<Card, 'id'>>) => void;
   remove: (id: string) => void;
-  /** User-initiated dismiss - respects persistent flag */
+  /** User-initiated dismiss - archives non-persistent cards */
   dismiss: (id: string) => boolean;
   minimize: (id: string) => void;
   expand: (id: string) => void;
+  archive: (id: string) => void;
+  restore: (id: string) => void;
   clear: () => void;
   replaceAll: (cards: Card[]) => void;
   /** Batch multiple operations */
@@ -20,6 +22,7 @@ interface CardStore {
   // Selectors
   getActiveCards: () => Card[];
   getMinimizedCards: () => Card[];
+  getArchivedCards: () => Card[];
   getCardById: (id: string) => Card | undefined;
 }
 
@@ -83,9 +86,9 @@ export const useCardStore = create<CardStore>((set, get) => ({
 
   dismiss: (id) => {
     const card = get().cards.get(id);
-    // Only allow dismissing non-persistent cards
+    // Only allow dismissing non-persistent cards — archives instead of removing
     if (card && !card.persistent) {
-      get().remove(id);
+      get().archive(id);
       return true;
     }
     return false;
@@ -121,6 +124,28 @@ export const useCardStore = create<CardStore>((set, get) => ({
         });
       }
 
+      return { cards: newCards };
+    });
+  },
+
+  archive: (id) => {
+    set((state) => {
+      const newCards = new Map(state.cards);
+      const card = newCards.get(id);
+      if (card) {
+        newCards.set(id, { ...card, state: 'archived' as CardState, archivedAt: Date.now() });
+      }
+      return { cards: newCards };
+    });
+  },
+
+  restore: (id) => {
+    set((state) => {
+      const newCards = new Map(state.cards);
+      const card = newCards.get(id);
+      if (card) {
+        newCards.set(id, { ...card, state: 'active' as CardState, archivedAt: undefined });
+      }
       return { cards: newCards };
     });
   },
@@ -173,6 +198,13 @@ export const useCardStore = create<CardStore>((set, get) => ({
     return cards
       .filter((card) => card.state === 'minimized')
       .sort((a, b) => b.createdAt - a.createdAt);
+  },
+
+  getArchivedCards: () => {
+    const cards = Array.from(get().cards.values());
+    return cards
+      .filter((card) => card.state === 'archived')
+      .sort((a, b) => (b.archivedAt ?? 0) - (a.archivedAt ?? 0));
   },
 
   getCardById: (id) => {

@@ -26,7 +26,14 @@ export function LiveActivityCard({ card }: LiveActivityCardProps) {
   const handleDismiss = () => {
     if (card.persistent) return;
     setIsLeaving(true);
-    setTimeout(() => dismiss(card.id), 200);
+    setTimeout(() => {
+      dismiss(card.id);
+      // Tell server to archive this card
+      const token = window.__CLAWDBOT_CANVAS_TOKEN;
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      fetch(`/api/cards/${encodeURIComponent(card.id)}/archive`, { method: 'POST', headers }).catch(() => {});
+    }, 200);
   };
 
   const accentColor = {

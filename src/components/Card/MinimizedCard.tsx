@@ -48,7 +48,13 @@ export function MinimizedCard({ card, style, className }: MinimizedCardProps) {
     e.stopPropagation();
     if (card.persistent) return;
     setIsLeaving(true);
-    setTimeout(() => dismiss(card.id), 200);
+    setTimeout(() => {
+      dismiss(card.id);
+      const token = window.__CLAWDBOT_CANVAS_TOKEN;
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      fetch(`/api/cards/${encodeURIComponent(card.id)}/archive`, { method: 'POST', headers }).catch(() => {});
+    }, 200);
   };
 
   const accentColor = {
